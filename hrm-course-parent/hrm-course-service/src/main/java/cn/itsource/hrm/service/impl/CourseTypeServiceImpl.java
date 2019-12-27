@@ -1,12 +1,17 @@
 package cn.itsource.hrm.service.impl;
 
+import cn.itsource.hrm.client.RedisClient;
 import cn.itsource.hrm.domain.CourseType;
 import cn.itsource.hrm.mapper.CourseTypeMapper;
 import cn.itsource.hrm.service.ICourseTypeService;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,10 +27,25 @@ import java.util.List;
 @Service
 public class CourseTypeServiceImpl extends ServiceImpl<CourseTypeMapper, CourseType> implements ICourseTypeService {
 
+    @Autowired
+    private RedisClient redisClient;
+
+    private final String COURSE_TYPE = "hrm:course_type:treeData";
     @Override
     public List<CourseType> loadTreeData() {
-        List<CourseType> courseTypes = getByParentId(0L);
-        return courseTypes;
+        //List<CourseType> courseTypes = getByParentId(0L);
+        String courseTypeStr = redisClient.get(COURSE_TYPE);
+        List<CourseType> list = null;
+        if(StringUtils.isNotEmpty(courseTypeStr)){
+            //json字符串转换成集合
+            list = JSONObject.parseArray(courseTypeStr, CourseType.class);
+        }else {
+            list = loadTreeDataLoop_2();
+            //集合转换为json字符串
+            String jsonString = JSONObject.toJSONString(list);
+            redisClient.set(COURSE_TYPE, jsonString);
+        }
+        return list;
     }
 
     public List<CourseType> loadTreeDataLoop_2(){
@@ -99,5 +119,34 @@ public class CourseTypeServiceImpl extends ServiceImpl<CourseTypeMapper, CourseT
             child.setChildren(childs);
         }
         return children;
+    }
+
+    /**
+     * 增删改数据同步到redis
+     */
+    public void synchronization(){
+        List<CourseType> list = loadTreeDataLoop_2();
+        String jsonString = JSONObject.toJSONString(list);
+        redisClient.set(COURSE_TYPE, jsonString);
+    }
+    @Override
+    public boolean save(CourseType entity) {
+        super.save(entity);
+        synchronization();
+        return true;
+    }
+
+    @Override
+    public boolean removeById(Serializable id) {
+        super.removeById(id);
+        synchronization();
+        return true;
+    }
+
+    @Override
+    public boolean updateById(CourseType entity) {
+        super.updateById(entity);
+        synchronization();
+        return true;
     }
 }

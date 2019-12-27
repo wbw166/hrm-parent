@@ -1,4 +1,0 @@
-# Auto Configure
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  cn.itsoource.hrm.cofig.MybatisPlusPageAutoConfig,\
-  cn.itsoource.hrm.cofig.Swagger2AutoConfiguration

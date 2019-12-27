@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: COURSE-SERVICE
+  datasource:
+      url: jdbc:mysql:///hrm-course?serverTimezone=UTC&useSSL=false&useUnicode=true&characterEncoding=utf8
+  cloud:
+      config:
+        name: application-course
+        discovery:
+          enabled: true
+          service-id: CONFIG-SERVER #通过配置中心服务端的服务名获取集群的注册列表
+  profiles:
+      active: dev
+
+

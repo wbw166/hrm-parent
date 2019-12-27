@@ -1,0 +1,16 @@
+server:
+  port: 9001
+
+spring:
+  application:
+    name: SYSTEM-SERVICE
+  cloud:
+      config:
+        name: application-system
+        discovery:
+          enabled: true
+          service-id: CONFIG-SERVER #通过配置中心服务端的服务名获取集群的注册列表
+  profiles:
+        active: dev
+
+
