@@ -1,0 +1,13 @@
+server:
+  port: 9004
+
+spring:
+  application:
+      name: FILE-SERVICE
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true

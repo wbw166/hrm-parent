@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: USER-SERVICE
+  cloud:
+      config:
+        name: application-user
+        discovery:
+          enabled: true
+          service-id: CONFIG-SERVER #通过配置中心服务端的服务名获取集群的注册列表
+  profiles:
+      active: dev
+
+#hystrix超时配置
+hystrix:
+  command:
+    course-service:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 5000
+
+#ribbon的超时时间
+ribbon:
+  ReadTimeout: 5000
+  SocketTimeout: 5000
+
+

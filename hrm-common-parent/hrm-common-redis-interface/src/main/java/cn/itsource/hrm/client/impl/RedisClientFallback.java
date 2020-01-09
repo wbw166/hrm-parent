@@ -13,5 +13,11 @@ public class RedisClientFallback implements RedisClient {
     @Override
     public String get(String key) {
         return "系统繁忙！";
+        //throw new RuntimeException();
+    }
+
+    @Override
+    public void setex(String key, String value, int time) {
+
     }
 }

@@ -83,4 +83,9 @@ public class SystemdictionaryitemController {
         Page<Systemdictionaryitem> page = systemdictionaryitemService.page(new Page<Systemdictionaryitem>(query.getPage(), query.getRows()));
         return new PageList<>(page.getTotal(),page.getRecords());
     }
+
+    @GetMapping("/listSn")
+    public List<Systemdictionaryitem> listSn(String sn){
+        return systemdictionaryitemService.listSn(sn);
+    }
 }

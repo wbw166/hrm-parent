@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>hrm-basic-generator</module>
-        <module>hrm-basic-until</module>
+        <module>hrm-basic-util</module>
         <module>itsource-hrm-spring-boot-starter</module>
     </modules>
 

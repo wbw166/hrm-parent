@@ -14,6 +14,9 @@
         <module>hrm-system-parent</module>
         <module>hrm-course-parent</module>
         <module>hrm-common-parent</module>
+        <module>hrm-page-parent</module>
+        <module>hrm-page-agent</module>
+        <module>hrm-user-parent</module>
     </modules>
 
     <properties>

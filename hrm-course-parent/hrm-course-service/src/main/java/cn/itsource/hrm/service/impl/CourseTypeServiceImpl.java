@@ -1,5 +1,7 @@
 package cn.itsource.hrm.service.impl;
 
+import cn.itsource.basic.util.StrUtils;
+import cn.itsource.hrm.client.PageClient;
 import cn.itsource.hrm.client.RedisClient;
 import cn.itsource.hrm.domain.CourseType;
 import cn.itsource.hrm.mapper.CourseTypeMapper;
@@ -15,6 +17,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -30,21 +33,33 @@ public class CourseTypeServiceImpl extends ServiceImpl<CourseTypeMapper, CourseT
     @Autowired
     private RedisClient redisClient;
 
+    @Autowired
+    private PageClient pageClient;
+
     private final String COURSE_TYPE = "hrm:course_type:treeData";
     @Override
     public List<CourseType> loadTreeData() {
         //List<CourseType> courseTypes = getByParentId(0L);
         String courseTypeStr = redisClient.get(COURSE_TYPE);
+        System.out.println(courseTypeStr);
         List<CourseType> list = null;
-        if(StringUtils.isNotEmpty(courseTypeStr)){
-            //json字符串转换成集合
-            list = JSONObject.parseArray(courseTypeStr, CourseType.class);
-        }else {
-            list = loadTreeDataLoop_2();
-            //集合转换为json字符串
-            String jsonString = JSONObject.toJSONString(list);
-            redisClient.set(COURSE_TYPE, jsonString);
+        //如果redis不存在，使用双重校验第一次redis不存在的时候查询数据库
+        if(StringUtils.isEmpty(courseTypeStr)){
+            //查询数据库，防止缓存穿透，大量请求同时查询数据库，同步代码块
+            synchronized (CourseTypeServiceImpl.class){
+                courseTypeStr = redisClient.get(COURSE_TYPE);
+                if(StringUtils.isEmpty(courseTypeStr)){
+                    //如果redis中不存在就查询数据库
+                    list = loadTreeDataLoop_2();
+                    //集合转换为json字符串
+                    String jsonString = JSONObject.toJSONString(list);
+                    redisClient.set(COURSE_TYPE, jsonString);
+                    return list;
+                }
+            }
         }
+        //如果redis里面存在 json字符串转换成集合直接返回
+        list = JSONObject.parseArray(courseTypeStr, CourseType.class);
         return list;
     }
 
@@ -128,6 +143,8 @@ public class CourseTypeServiceImpl extends ServiceImpl<CourseTypeMapper, CourseT
         List<CourseType> list = loadTreeDataLoop_2();
         String jsonString = JSONObject.toJSONString(list);
         redisClient.set(COURSE_TYPE, jsonString);
+        //重新生成静态页面
+        staticCourseIndex(2L);
     }
     @Override
     public boolean save(CourseType entity) {
@@ -148,5 +165,55 @@ public class CourseTypeServiceImpl extends ServiceImpl<CourseTypeMapper, CourseT
         super.updateById(entity);
         synchronization();
         return true;
+    }
+
+    /**
+     * 静态化课程主页
+     * @param pageId
+     */
+    @Override
+    public void staticCourseIndex(Long pageId) {
+        //查询静态化需要的数据存放到redis中
+        String dataKey = initData(pageId);
+        pageClient.staticPage(dataKey, pageId);
+    }
+
+    /**
+     * 页面静态化数据准备
+     * @param pageId
+     */
+    private String initData(Long pageId) {
+        List<CourseType> courseTypes = loadTreeDataLoop_2();
+        String jsonString = JSONObject.toJSONString(courseTypes);
+        String key = "page:" + pageId + ":courseTypes";
+        redisClient.set(key, jsonString);
+
+        return key;
+    }
+
+    @Override
+    public List<Map<String, Object>> getCrumbs(Long courseTypeId) {
+        CourseType courseType = baseMapper.selectById(courseTypeId);
+        String path = courseType.getPath();
+        //查询各个级别的类型
+        path = path.replaceAll("\\.", ",");
+        path = path.substring(1);
+        List<Long> ids = StrUtils.splitStr2LongArr(path);
+        ArrayList<Map<String,Object>> list = new ArrayList<>();
+        //循环id封装数据
+        for (Long id : ids) {
+            HashMap<String, Object> map = new HashMap<>();
+            //当前类型
+            CourseType currentType = baseMapper.selectById(id);
+            map.put("currentType", currentType);
+            //同级别的类型
+            List<CourseType> otherTypes = baseMapper.selectList(new QueryWrapper<CourseType>()
+                    .eq("pid", currentType.getPid())
+                    .ne("id", currentType.getId())
+            );
+            map.put("otherTypes", otherTypes);
+            list.add(map);
+        }
+        return list;
     }
 }

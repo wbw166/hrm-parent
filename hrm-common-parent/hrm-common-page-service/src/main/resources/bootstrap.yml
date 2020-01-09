@@ -1,0 +1,19 @@
+#配置中心在哪里，拉取哪个配置文件
+spring:
+  application:
+      name: STATIC-SERVICE
+  cloud:
+    config:
+      name: application-static
+      discovery:
+        enabled: true
+        service-id: CONFIG-SERVER #通过配置中心服务端的服务名获取集群的注册列表
+  profiles:
+    active: dev
+
+rabbitmq:
+  host: 127.0.0.1
+  port: 5672
+  username: guest
+  password: guest
+  virtualHost: /

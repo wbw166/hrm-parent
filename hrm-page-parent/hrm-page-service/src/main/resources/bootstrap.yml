@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: PAGE-SERVICE
+  cloud:
+      config:
+        name: application-page
+        discovery:
+          enabled: true
+          service-id: CONFIG-SERVER #通过配置中心服务端的服务名获取集群的注册列表
+  profiles:
+      active: dev
+
+
